@@ -2,125 +2,139 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de Stock</title>
+  <title>Gestión de Productos</title>
+  <style>
+    table, th, td {
+      border: 1px solid #ccc;
+      border-collapse: collapse;
+      padding: 8px;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    form {
+      margin-bottom: 20px;
+    }
+  </style>
 </head>
 <body>
-  <h2>Control de Stock</h2>
+  <h1>Gestión de Productos</h1>
 
-  <table border="1">
+  <form id="productoForm">
+    <input type="hidden" id="editId">
+    <label>Artículo: <input type="text" id="articulo" required></label>
+    <label>Modelo: <input type="text" id="modelo" required></label>
+    <label>Color: <input type="text" id="color" required></label>
+    <label>Fecha Ingreso: <input type="date" id="fechaIngreso" required></label>
+    <label>Cantidad: <input type="number" id="cantidad" required></label>
+    <button type="submit">Guardar</button>
+    <button type="button" onclick="resetForm()">Cancelar</button>
+  </form>
+
+  <table id="tablaProductos">
     <thead>
       <tr>
-        <th>IdProducto</th>
-        <th>Descripción</th>
+        <th>ID</th>
+        <th>Artículo</th>
+        <th>Modelo</th>
+        <th>Color</th>
         <th>Fecha Ingreso</th>
-        <th>Cantidad Actual</th>
+        <th>Cantidad</th>
         <th>Acciones</th>
       </tr>
     </thead>
-    <tbody id="tablaProductos">
-      <!-- Productos se insertarán aquí -->
-    </tbody>
+    <tbody></tbody>
   </table>
 
-  <h3>Agregar / Editar Producto</h3>
-  <form id="formAgregar">
-    <input type="text" id="descripcion" placeholder="Descripción" required>
-    <input type="date" id="fechaIngreso" required>
-    <input type="number" id="cantidadActual" placeholder="Cantidad" required>
-    <button type="submit" id="btnAgregar">Agregar</button>
-    <button type="button" id="btnActualizar" style="display:none;">Actualizar</button>
-    <button type="button" id="btnCancelar" style="display:none;">Cancelar</button>
-  </form>
-
   <script>
-    const apiUrl = 'http://localhost:3000/productos';
-    let productoEditandoId = null;
+    const API_URL = 'http://localhost:3000/productos';
+
+    const form = document.getElementById('productoForm');
+    const tablaBody = document.querySelector('#tablaProductos tbody');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const id = document.getElementById('editId').value;
+      const producto = {
+        Articulo: document.getElementById('articulo').value,
+        Modelo: document.getElementById('modelo').value,
+        Color: document.getElementById('color').value,
+        FechaIngreso: document.getElementById('fechaIngreso').value,
+        CantidadActual: parseInt(document.getElementById('cantidad').value),
+      };
+
+      console.log("Cuerpo de la solicitud:", producto); // 👈 Aquí ves el body antes del fetch
+
+
+      try {
+        if (id) {
+          // Editar
+          await fetch(`${API_URL}/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(producto)
+          });
+        } else {
+          // Agregar
+          await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(producto)
+          });
+        }
+
+        resetForm();
+        cargarProductos();
+      } catch (err) {
+        alert('Error al guardar producto');
+        console.error(err);
+      }
+    });
+
+    function resetForm() {
+      form.reset();
+      document.getElementById('editId').value = '';
+    }
 
     async function cargarProductos() {
-      const res = await fetch(apiUrl);
+      const res = await fetch(API_URL);
       const productos = await res.json();
-      const tabla = document.getElementById('tablaProductos');
-      tabla.innerHTML = '';
 
-      productos.forEach(prod => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${prod.IdProducto}</td>
-          <td>${prod.Descripcion}</td>
-          <td>${prod.FechaIngreso}</td>
-          <td>${prod.CantidadActual}</td>
+      tablaBody.innerHTML = '';
+      productos.forEach(p => {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+          <td>${p.IdProducto}</td>
+          <td>${p.Articulo}</td>
+          <td>${p.Modelo}</td>
+          <td>${p.Color}</td>
+          <td>${p.FechaIngreso}</td>
+          <td>${p.CantidadActual}</td>
           <td>
-            <button onclick="eliminarProducto('${prod.IdProducto}')">Eliminar</button>
-            <button onclick="prepararEdicion(${prod.IdProducto}, '${prod.Descripcion}', '${prod.FechaIngreso}', ${prod.CantidadActual})">Editar</button>
+            <button onclick='editarProducto(${JSON.stringify(p)})'>Editar</button>
+            <button onclick='eliminarProducto(${p.IdProducto})'>Eliminar</button>
           </td>
         `;
-        tabla.appendChild(row);
+        tablaBody.appendChild(fila);
       });
+    }
+
+    function editarProducto(producto) {
+      document.getElementById('editId').value = producto.IdProducto;
+      document.getElementById('articulo').value = producto.Articulo;
+      document.getElementById('modelo').value = producto.Modelo;
+      document.getElementById('color').value = producto.Color;
+      document.getElementById('fechaIngreso').value = producto.FechaIngreso;
+      document.getElementById('cantidad').value = producto.CantidadActual;
     }
 
     async function eliminarProducto(id) {
-      await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
-      cargarProductos();
+      if (confirm('¿Estás seguro de eliminar este producto?')) {
+        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        cargarProductos();
+      }
     }
-
-    function prepararEdicion(id, descripcion, fechaIngreso, cantidad) {
-      productoEditandoId = id;
-      document.getElementById('descripcion').value = descripcion;
-      document.getElementById('fechaIngreso').value = fechaIngreso;
-      document.getElementById('cantidadActual').value = cantidad;
-
-      document.getElementById('btnAgregar').style.display = 'none';
-      document.getElementById('btnActualizar').style.display = 'inline-block';
-      document.getElementById('btnCancelar').style.display = 'inline-block';
-    }
-
-    document.getElementById('btnActualizar').addEventListener('click', async () => {
-      const nuevaDesc = document.getElementById('descripcion').value;
-      const nuevaFecha = document.getElementById('fechaIngreso').value;
-      const nuevaCantidad = document.getElementById('cantidadActual').value;
-
-      await fetch(`${apiUrl}/${productoEditandoId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          Descripcion: nuevaDesc,
-          FechaIngreso: nuevaFecha,
-          CantidadActual: nuevaCantidad
-        })
-      });
-
-      cancelarEdicion();
-      cargarProductos();
-    });
-
-    document.getElementById('btnCancelar').addEventListener('click', cancelarEdicion);
-
-    function cancelarEdicion() {
-      document.getElementById('formAgregar').reset();
-      document.getElementById('btnAgregar').style.display = 'inline-block';
-      document.getElementById('btnActualizar').style.display = 'none';
-      document.getElementById('btnCancelar').style.display = 'none';
-      productoEditandoId = null;
-    }
-
-    async function agregarProducto(e) {
-      e.preventDefault();
-      const descripcion = document.getElementById('descripcion').value;
-      const fechaIngreso = document.getElementById('fechaIngreso').value;
-      const cantidadActual = document.getElementById('cantidadActual').value;
-
-      await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ Descripcion: descripcion, FechaIngreso: fechaIngreso, CantidadActual: cantidadActual })
-      });
-
-      e.target.reset();
-      cargarProductos();
-    }
-
-    document.getElementById('formAgregar').addEventListener('submit', agregarProducto);
 
     cargarProductos();
   </script>

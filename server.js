@@ -1,17 +1,18 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+const cors = require('cors');
+
 const Usuario = require('./models/usuario'); 
 const Producto = require('./models/productos');
 const Role = require('./models/Role');
-const cors = require('cors');
 
 const app = express();
+
 app.use(express.json());
 app.use(cors());
 
 // ========== CONEXIÓN A MONGODB ATLAS ==========
-
 const MONGO_URI = process.env.MONGO_URI;
 
 mongoose.connect(MONGO_URI, {
@@ -22,13 +23,15 @@ mongoose.connect(MONGO_URI, {
 .then(() => console.log('✅ Conectado a MongoDB Atlas'))
 .catch(err => console.error('❌ Error al conectar a MongoDB Atlas:', err));
 
-// ========== MANEJO DE USUARIOS ==========
-
+// ========== RUTAS DE USUARIO ==========
 app.post('/register', async (req, res) => {
   try {
     const { nombreUsuario, email, contraseña } = req.body;
-    const idRol = `ROL-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+    if (!nombreUsuario || !email || !contraseña) {
+      return res.status(400).json({ mensaje: 'Faltan datos obligatorios' });
+    }
 
+    const idRol = `ROL-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
     const nuevoUsuario = new Usuario({
       Nombre: nombreUsuario,
       Email: email,
@@ -37,32 +40,33 @@ app.post('/register', async (req, res) => {
     });
 
     await nuevoUsuario.save();
-    console.log('Usuario guardado', nuevoUsuario);
     res.json({ mensaje: 'Usuario registrado con éxito', usuario: nuevoUsuario.toObject() });
 
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al registrar usuario', error });
+    console.error('❌ Error al registrar usuario:', error);
+    res.status(500).json({ mensaje: 'Error interno', error });
   }
 });
 
-// ========== MANEJO DE PRODUCTOS ==========
-
+// ========== RUTAS DE PRODUCTO ==========
 app.get('/productos', async (req, res) => {
-  const productos = await Producto.find();
-  res.json(productos);
+  try {
+    const productos = await Producto.find();
+    res.json(productos);
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al obtener productos', error });
+  }
 });
 
 app.post('/productos', async (req, res) => {
   try {
-    const { Descripcion, FechaIngreso, CantidadActual } = req.body;
-    const ultimo = await Producto.findOne().sort({ IdProducto: -1 });
-    const nuevoId = ultimo ? ultimo.IdProducto + 1 : 1;
+    const { Articulo, Modelo, Color, FechaIngreso, CantidadActual } = req.body;
+    if (!Articulo || !Modelo || !Color || !FechaIngreso || CantidadActual == null) {
+      return res.status(400).json({ mensaje: 'Faltan campos requeridos' });
+    }
 
     const nuevoProducto = new Producto({
-      IdProducto: nuevoId,
-      Descripcion,
-      FechaIngreso,
-      CantidadActual
+      Articulo, Modelo, Color, FechaIngreso, CantidadActual
     });
 
     await nuevoProducto.save();
@@ -75,11 +79,9 @@ app.post('/productos', async (req, res) => {
 app.put('/productos/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { Descripcion, FechaIngreso, CantidadActual } = req.body;
-
     const actualizado = await Producto.findOneAndUpdate(
       { IdProducto: id },
-      { Descripcion, FechaIngreso, CantidadActual },
+      req.body,
       { new: true }
     );
 
@@ -88,7 +90,6 @@ app.put('/productos/:id', async (req, res) => {
     }
 
     res.json({ mensaje: 'Producto actualizado', producto: actualizado });
-
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al actualizar producto', error });
   }
@@ -104,28 +105,22 @@ app.delete('/productos/:id', async (req, res) => {
   }
 });
 
-// ========== MANEJO DE ROLES ==========
-
+// ========== RUTAS DE ROLES ==========
 app.get('/roles', async (req, res) => {
-  const roles = await Role.find();
-  res.json(roles);
+  try {
+    const roles = await Role.find();
+    res.json(roles);
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al obtener roles', error });
+  }
 });
 
 app.post('/roles', async (req, res) => {
   try {
     const { Nombre, Edit, Add, Delete, View } = req.body;
-    const ultimo = await Role.findOne().sort({ IdRole: -1 });
-    const nuevoId = ultimo ? ultimo.IdRole + 1 : 1;
+    if (!Nombre) return res.status(400).json({ mensaje: 'Nombre es obligatorio' });
 
-    const nuevoRole = new Role({
-      IdRole: nuevoId,
-      Nombre,
-      Edit,
-      Add,
-      Delete,
-      View
-    });
-
+    const nuevoRole = new Role({ Nombre, Edit, Add, Delete, View });
     await nuevoRole.save();
     res.status(201).json({ mensaje: 'Rol agregado', rol: nuevoRole });
   } catch (error) {
@@ -140,6 +135,11 @@ app.put('/roles/:id', async (req, res) => {
       req.body,
       { new: true }
     );
+
+    if (!actualizado) {
+      return res.status(404).json({ mensaje: 'Rol no encontrado' });
+    }
+
     res.json({ mensaje: 'Rol actualizado', rol: actualizado });
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al actualizar rol', error });
