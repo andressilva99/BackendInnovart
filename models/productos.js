@@ -6,7 +6,8 @@ const productoSchema = new mongoose.Schema({
   Modelo: String,
   Color: String,
   FechaIngreso: String,
-  CantidadActual: Number
+  CantidadActual: Number,
+  Ubicacion: String
 });
 
 // Middleware para autoincrementar IdProducto

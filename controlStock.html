@@ -27,6 +27,7 @@
     <label>Color: <input type="text" id="color" required></label>
     <label>Fecha Ingreso: <input type="date" id="fechaIngreso" required></label>
     <label>Cantidad: <input type="number" id="cantidad" required></label>
+    <label>Ubicación: <input type="number" id="cantidad" required></label>
     <button type="submit">Guardar</button>
     <button type="button" onclick="resetForm()">Cancelar</button>
   </form>
@@ -40,7 +41,9 @@
         <th>Color</th>
         <th>Fecha Ingreso</th>
         <th>Cantidad</th>
+        <th>Ubicación</th>
         <th>Acciones</th>
+        
       </tr>
     </thead>
     <tbody></tbody>
@@ -62,6 +65,7 @@
         Color: document.getElementById('color').value,
         FechaIngreso: document.getElementById('fechaIngreso').value,
         CantidadActual: parseInt(document.getElementById('cantidad').value),
+        Ubicacion: parseInt(document.getElementById('ubicacion').value),
       };
 
       console.log("Cuerpo de la solicitud:", producto); // 👈 Aquí ves el body antes del fetch
@@ -111,6 +115,7 @@
           <td>${p.Color}</td>
           <td>${p.FechaIngreso}</td>
           <td>${p.CantidadActual}</td>
+          <td>${p.Ubicacion}</td>
           <td>
             <button onclick='editarProducto(${JSON.stringify(p)})'>Editar</button>
             <button onclick='eliminarProducto(${p.IdProducto})'>Eliminar</button>
@@ -127,6 +132,7 @@
       document.getElementById('color').value = producto.Color;
       document.getElementById('fechaIngreso').value = producto.FechaIngreso;
       document.getElementById('cantidad').value = producto.CantidadActual;
+      document.getElementById('ubicacion').value = producto.Ubicacion;
     }
 
     async function eliminarProducto(id) {
