@@ -3,9 +3,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-const Usuario = require('./models/usuario'); 
+
 const Producto = require('./models/productos');
-const Role = require('./models/Role');
+
 
 const app = express();
 
