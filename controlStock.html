@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Gestión de Productos</title>
   <style>
     table, th, td {
@@ -21,13 +21,13 @@
   <h1>Gestión de Productos</h1>
 
   <form id="productoForm">
-    <input type="hidden" id="editId">
-    <label>Artículo: <input type="text" id="articulo" required></label>
-    <label>Modelo: <input type="text" id="modelo" required></label>
-    <label>Color: <input type="text" id="color" required></label>
-    <label>Fecha Ingreso: <input type="date" id="fechaIngreso" required></label>
-    <label>Cantidad: <input type="number" id="cantidad" required></label>
-    <label>Ubicación: <input type="number" id="cantidad" required></label>
+    <input type="hidden" id="editId" />
+    <label>Artículo: <input type="text" id="articulo" required /></label>
+    <label>Modelo: <input type="text" id="modelo" required /></label>
+    <label>Color: <input type="text" id="color" required /></label>
+    <label>Fecha Ingreso: <input type="date" id="fechaIngreso" required /></label>
+    <label>Cantidad: <input type="number" id="cantidad" required /></label>
+    <label>Ubicación: <input type="text" id="ubicacion" required /></label>
     <button type="submit">Guardar</button>
     <button type="button" onclick="resetForm()">Cancelar</button>
   </form>
@@ -43,14 +43,13 @@
         <th>Cantidad</th>
         <th>Ubicación</th>
         <th>Acciones</th>
-        
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 
   <script>
-    const API_URL = 'http://localhost:3000/productos';
+    const API_URL = 'https://backendinnovart.onrender.com/productos';
 
     const form = document.getElementById('productoForm');
     const tablaBody = document.querySelector('#tablaProductos tbody');
@@ -65,11 +64,8 @@
         Color: document.getElementById('color').value,
         FechaIngreso: document.getElementById('fechaIngreso').value,
         CantidadActual: parseInt(document.getElementById('cantidad').value),
-        Ubicacion: parseInt(document.getElementById('ubicacion').value),
+        Ubicacion: document.getElementById('ubicacion').value,
       };
-
-      console.log("Cuerpo de la solicitud:", producto); // 👈 Aquí ves el body antes del fetch
-
 
       try {
         if (id) {
@@ -117,7 +113,7 @@
           <td>${p.CantidadActual}</td>
           <td>${p.Ubicacion}</td>
           <td>
-            <button onclick='editarProducto(${JSON.stringify(p)})'>Editar</button>
+            <button onclick='editarProducto(${JSON.stringify(p).replace(/'/g, "\\'")})'>Editar</button>
             <button onclick='eliminarProducto(${p.IdProducto})'>Eliminar</button>
           </td>
         `;

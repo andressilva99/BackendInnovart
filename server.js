@@ -3,9 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-
 const Producto = require('./models/productos');
-
 
 const app = express();
 
@@ -13,17 +11,17 @@ app.use(express.json());
 app.use(cors());
 
 // ========== CONEXIÓN A MONGODB ATLAS ==========
+// Solo pasamos el URI, sin las opciones deprecated
 const MONGO_URI = process.env.MONGO_URI;
 
 mongoose.connect(MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
   serverApi: { version: '1', strict: true, deprecationErrors: true }
 })
 .then(() => console.log('✅ Conectado a MongoDB Atlas'))
 .catch(err => console.error('❌ Error al conectar a MongoDB Atlas:', err));
 
 // ========== RUTAS DE PRODUCTO ==========
+
 app.get('/productos', async (req, res) => {
   try {
     const productos = await Producto.find();
@@ -36,7 +34,7 @@ app.get('/productos', async (req, res) => {
 app.post('/productos', async (req, res) => {
   try {
     const { Articulo, Modelo, Color, FechaIngreso, CantidadActual, Ubicacion } = req.body;
-    if (!Articulo || !Modelo || !Color || !FechaIngreso || CantidadActual || Ubicacion == null) {
+    if (!Articulo || !Modelo || !Color || !FechaIngreso || CantidadActual == null || Ubicacion == null) {
       return res.status(400).json({ mensaje: 'Faltan campos requeridos' });
     }
 
@@ -79,4 +77,3 @@ app.delete('/productos/:id', async (req, res) => {
     res.status(500).json({ mensaje: 'Error al eliminar producto', error });
   }
 });
-
