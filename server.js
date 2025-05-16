@@ -11,7 +11,6 @@ app.use(express.json());
 app.use(cors());
 
 // ========== CONEXIÓN A MONGODB ATLAS ==========
-// Solo pasamos el URI, sin las opciones deprecated
 const MONGO_URI = process.env.MONGO_URI;
 
 mongoose.connect(MONGO_URI, {
@@ -34,7 +33,7 @@ app.get('/productos', async (req, res) => {
 app.post('/productos', async (req, res) => {
   try {
     const { Articulo, Modelo, Color, FechaIngreso, CantidadActual, Ubicacion } = req.body;
-    if (!Articulo || !Modelo || !Color || !FechaIngreso || CantidadActual == null || Ubicacion == null) {
+    if (!Articulo || !Modelo || !Color || !FechaIngreso || CantidadActual == null || !Ubicacion) {
       return res.status(400).json({ mensaje: 'Faltan campos requeridos' });
     }
 
@@ -51,17 +50,9 @@ app.post('/productos', async (req, res) => {
 
 app.put('/productos/:id', async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    const actualizado = await Producto.findOneAndUpdate(
-      { IdProducto: id },
-      req.body,
-      { new: true }
-    );
-
-    if (!actualizado) {
-      return res.status(404).json({ mensaje: 'Producto no encontrado' });
-    }
-
+    const { id } = req.params;
+    const actualizado = await Producto.findByIdAndUpdate(id, req.body, { new: true });
+    if (!actualizado) return res.status(404).json({ mensaje: 'Producto no encontrado' });
     res.json({ mensaje: 'Producto actualizado', producto: actualizado });
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al actualizar producto', error });
@@ -70,10 +61,16 @@ app.put('/productos/:id', async (req, res) => {
 
 app.delete('/productos/:id', async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    await Producto.deleteOne({ IdProducto: id });
+    const { id } = req.params;
+    await Producto.findByIdAndDelete(id);
     res.json({ mensaje: 'Producto eliminado' });
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al eliminar producto', error });
   }
+});
+
+// Levantar servidor
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Servidor corriendo en puerto ${PORT}`);
 });

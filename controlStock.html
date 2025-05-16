@@ -2,141 +2,78 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Gestión de Productos</title>
-  <style>
-    table, th, td {
-      border: 1px solid #ccc;
-      border-collapse: collapse;
-      padding: 8px;
-    }
-    th {
-      background-color: #f2f2f2;
-    }
-    form {
-      margin-bottom: 20px;
-    }
-  </style>
+  <title>Productos</title>
 </head>
 <body>
-  <h1>Gestión de Productos</h1>
-
-  <form id="productoForm">
-    <input type="hidden" id="editId" />
-    <label>Artículo: <input type="text" id="articulo" required /></label>
-    <label>Modelo: <input type="text" id="modelo" required /></label>
-    <label>Color: <input type="text" id="color" required /></label>
-    <label>Fecha Ingreso: <input type="date" id="fechaIngreso" required /></label>
-    <label>Cantidad: <input type="number" id="cantidad" required /></label>
-    <label>Ubicación: <input type="text" id="ubicacion" required /></label>
-    <button type="submit">Guardar</button>
-    <button type="button" onclick="resetForm()">Cancelar</button>
-  </form>
-
-  <table id="tablaProductos">
+  <h1>Lista de Productos</h1>
+  <table border="1" id="productosTabla">
     <thead>
       <tr>
-        <th>ID</th>
-        <th>Artículo</th>
-        <th>Modelo</th>
-        <th>Color</th>
-        <th>Fecha Ingreso</th>
-        <th>Cantidad</th>
-        <th>Ubicación</th>
-        <th>Acciones</th>
+        <th>ID</th><th>Artículo</th><th>Modelo</th><th>Color</th><th>Fecha Ingreso</th><th>Cantidad</th><th>Ubicación</th><th>Acciones</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 
+  <h2>Agregar Producto</h2>
+  <form id="formAgregar">
+    <input name="Articulo" placeholder="Artículo" required />
+    <input name="Modelo" placeholder="Modelo" required />
+    <input name="Color" placeholder="Color" required />
+    <input name="FechaIngreso" type="date" required />
+    <input name="CantidadActual" type="number" placeholder="Cantidad" required />
+    <input name="Ubicacion" placeholder="Ubicación" required />
+    <button type="submit">Agregar</button>
+  </form>
+
   <script>
-    const API_URL = 'https://backendinnovart.onrender.com/productos';
-
-    const form = document.getElementById('productoForm');
-    const tablaBody = document.querySelector('#tablaProductos tbody');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const id = document.getElementById('editId').value;
-      const producto = {
-        Articulo: document.getElementById('articulo').value,
-        Modelo: document.getElementById('modelo').value,
-        Color: document.getElementById('color').value,
-        FechaIngreso: document.getElementById('fechaIngreso').value,
-        CantidadActual: parseInt(document.getElementById('cantidad').value),
-        Ubicacion: document.getElementById('ubicacion').value,
-      };
-
-      try {
-        if (id) {
-          // Editar
-          await fetch(`${API_URL}/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(producto)
-          });
-        } else {
-          // Agregar
-          await fetch(API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(producto)
-          });
-        }
-
-        resetForm();
-        cargarProductos();
-      } catch (err) {
-        alert('Error al guardar producto');
-        console.error(err);
-      }
-    });
-
-    function resetForm() {
-      form.reset();
-      document.getElementById('editId').value = '';
-    }
+    const tabla = document.querySelector('#productosTabla tbody');
+    const formAgregar = document.getElementById('formAgregar');
 
     async function cargarProductos() {
-      const res = await fetch(API_URL);
+      const res = await fetch('http://localhost:3000/productos');
       const productos = await res.json();
-
-      tablaBody.innerHTML = '';
+      tabla.innerHTML = '';
       productos.forEach(p => {
         const fila = document.createElement('tr');
         fila.innerHTML = `
-          <td>${p.IdProducto}</td>
+          <td>${p._id}</td>
           <td>${p.Articulo}</td>
           <td>${p.Modelo}</td>
           <td>${p.Color}</td>
-          <td>${p.FechaIngreso}</td>
+          <td>${new Date(p.FechaIngreso).toLocaleDateString()}</td>
           <td>${p.CantidadActual}</td>
           <td>${p.Ubicacion}</td>
-          <td>
-            <button onclick='editarProducto(${JSON.stringify(p).replace(/'/g, "\\'")})'>Editar</button>
-            <button onclick='eliminarProducto(${p.IdProducto})'>Eliminar</button>
-          </td>
+          <td><button onclick="eliminarProducto('${p._id}')">Eliminar</button></td>
         `;
-        tablaBody.appendChild(fila);
+        tabla.appendChild(fila);
       });
     }
 
-    function editarProducto(producto) {
-      document.getElementById('editId').value = producto.IdProducto;
-      document.getElementById('articulo').value = producto.Articulo;
-      document.getElementById('modelo').value = producto.Modelo;
-      document.getElementById('color').value = producto.Color;
-      document.getElementById('fechaIngreso').value = producto.FechaIngreso;
-      document.getElementById('cantidad').value = producto.CantidadActual;
-      document.getElementById('ubicacion').value = producto.Ubicacion;
+    async function eliminarProducto(id) {
+      if (!confirm('¿Seguro quieres eliminar este producto?')) return;
+      await fetch(`http://localhost:3000/productos/${id}`, { method: 'DELETE' });
+      cargarProductos();
     }
 
-    async function eliminarProducto(id) {
-      if (confirm('¿Estás seguro de eliminar este producto?')) {
-        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-        cargarProductos();
-      }
-    }
+    formAgregar.addEventListener('submit', async e => {
+      e.preventDefault();
+      const data = {
+        Articulo: e.target.Articulo.value,
+        Modelo: e.target.Modelo.value,
+        Color: e.target.Color.value,
+        FechaIngreso: e.target.FechaIngreso.value,
+        CantidadActual: parseInt(e.target.CantidadActual.value, 10),
+        Ubicacion: e.target.Ubicacion.value,
+      };
+      await fetch('http://localhost:3000/productos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      formAgregar.reset();
+      cargarProductos();
+    });
 
     cargarProductos();
   </script>
